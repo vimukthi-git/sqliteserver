@@ -68,49 +68,40 @@ int main(void) {
 
     while (1) {
         /* creates buffer and serializer instance. */
-        msgpack_sbuffer* buffer = msgpack_sbuffer_new();
+        //msgpack_sbuffer* buffer = msgpack_sbuffer_new();
         //msgpack_packer* pk = msgpack_packer_new(buffer, msgpack_sbuffer_write);
 
-        while (1) {
-            //  Process all parts of the message
-            zmq_msg_t message;
-            zmq_msg_init(&message);
-            int size = zmq_msg_recv(&message, responder, 0);
+        //  Process the message
+        zmq_msg_t message;
+        zmq_msg_init(&message);
+        int size = zmq_msg_recv(&message, responder, 0);
 
-            //  Dump the message as text or binary            
-            char* data = zmq_msg_data(&message);
+        //  Dump the message as text or binary            
+        char* data = zmq_msg_data(&message);
 
 
-            /* serializes ["Hello", "MessagePack"]. */
-            //msgpack_pack_array(pk, 2);
-            //msgpack_pack_raw(pk, 5);
-            //msgpack_pack_raw_body(pk, "Hello", 5);
-            msgpack_sbuffer_write(data, buffer, size);
+        /* serializes ["Hello", "MessagePack"]. */
+        //msgpack_pack_array(pk, 2);
+        //msgpack_pack_raw(pk, 5);
+        //msgpack_pack_raw_body(pk, "Hello", 5);
+        //msgpack_sbuffer_write(data, buffer, size);
 
-            int64_t more; //  Multipart detection
-            more = 0;
-            size_t more_size = sizeof (more);
-            zmq_getsockopt(responder, ZMQ_RCVMORE, &more, &more_size);
-            zmq_msg_close(&message);
-            if (!more)
-                break; //  Last message part
-        }
         /* deserializes it. */
         msgpack_unpacked msg;
         msgpack_unpacked_init(&msg);
-        bool success = msgpack_unpack_next(&msg, buffer->data, buffer->size, NULL);
+        bool success = msgpack_unpack_next(&msg, data, size, NULL);
 
         if (success) {
             /* prints the deserialized object. */
             printf("\n***********************************\n");
             msgpack_object obj = msg.data;
             msgpack_object_print(stdout, obj); /*=> ["Hello", "MessagePack"] */
-            
+
             printf("\n***********************************");
-        }        
+        }
         /* cleaning */
         msgpack_unpacked_destroy(&msg);
-        msgpack_sbuffer_free(buffer);
+        //msgpack_sbuffer_free(buffer);
         //msgpack_packer_free(pk);
         //        char buffer [10];
         //        zmq_recv (responder, buffer, 10, 0);
