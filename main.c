@@ -26,7 +26,6 @@ int main(void) {
     int rc;
     /* Open database */
     rc = sqlite3_open(":memory:", &db);
-    //rc = sqlite3_open(tid, &db);
     if (rc) {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
         exit(0);
@@ -75,7 +74,6 @@ int main(void) {
         zmq_msg_t message;
         zmq_msg_init(&message);
         int size = zmq_msg_recv(&message, responder, 0);
-
         //  Dump the message as text or binary            
         char* data = zmq_msg_data(&message);
 
@@ -95,12 +93,27 @@ int main(void) {
             /* prints the deserialized object. */
             printf("\n***********************************\n");
             msgpack_object obj = msg.data;
-            msgpack_object_print(stdout, obj); /*=> ["Hello", "MessagePack"] */
-
+            if (obj.type = MSGPACK_OBJECT_RAW) {
+                char* sql = malloc(obj.via.raw.size);
+                memcpy(sql, obj.via.raw.ptr, obj.via.raw.size);
+                /* Execute SQL statement */
+                rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
+                if (rc != SQLITE_OK) {
+                    fprintf(stderr, "SQL error: %s\n", zErrMsg);
+                    sqlite3_free(zErrMsg);
+                } else {
+                    fprintf(stdout, "Insert successfully\n");
+                }
+                //printf("%s\n", sql);
+                free(sql);
+            }
+            //            printf("***********************************\n");
+            //            msgpack_object_print(stdout, obj); /*=> ["Hello", "MessagePack"] */
             printf("\n***********************************");
         }
         /* cleaning */
         msgpack_unpacked_destroy(&msg);
+        zmq_msg_close(&message);
         //msgpack_sbuffer_free(buffer);
         //msgpack_packer_free(pk);
         //        char buffer [10];
@@ -109,5 +122,7 @@ int main(void) {
         //sleep(10); //  Do some 'work'
         zmq_send(responder, "World", 5, 0);
     }
+    zmq_close(responder);
+    zmq_ctx_destroy(context);
     return 0;
 }
