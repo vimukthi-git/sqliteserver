@@ -18,6 +18,25 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
     return 0;
 }
 
+static void *
+worker_routine (void *context) {
+    //  Socket to talk to dispatcher
+    void *receiver = zmq_socket (context, ZMQ_REP);
+    zmq_connect (receiver, "inproc://workers");
+
+    while (1) {
+        char *string = s_recv (receiver);
+        printf ("Received request: [%s]\n", string);
+        free (string);
+        //  Do some 'work'
+        sleep (1);
+        //  Send reply back to client
+        s_send (receiver, "World");
+    }
+    zmq_close (receiver);
+    return NULL;
+}
+
 int main(void) {
     // Connect to db
     sqlite3 *db;
@@ -66,6 +85,7 @@ int main(void) {
     assert(rc == 0);
 
     while (1) {
+
         /* creates buffer and serializer instance. */
         //msgpack_sbuffer* buffer = msgpack_sbuffer_new();
         //msgpack_packer* pk = msgpack_packer_new(buffer, msgpack_sbuffer_write);
@@ -91,7 +111,7 @@ int main(void) {
 
         if (success) {
             /* prints the deserialized object. */
-            printf("\n***********************************\n");
+            //printf("\n***********************************\n");
             msgpack_object obj = msg.data;
             if (obj.type = MSGPACK_OBJECT_RAW) {
                 char* sql = malloc(obj.via.raw.size);
@@ -101,15 +121,13 @@ int main(void) {
                 if (rc != SQLITE_OK) {
                     fprintf(stderr, "SQL error: %s\n", zErrMsg);
                     sqlite3_free(zErrMsg);
-                } else {
-                    fprintf(stdout, "Insert successfully\n");
-                }
+                } 
                 //printf("%s\n", sql);
                 free(sql);
             }
             //            printf("***********************************\n");
-            //            msgpack_object_print(stdout, obj); /*=> ["Hello", "MessagePack"] */
-            printf("\n***********************************");
+            //msgpack_object_print(stdout, obj); /*=> ["Hello", "MessagePack"] */
+            //printf("\n***********************************");
         }
         /* cleaning */
         msgpack_unpacked_destroy(&msg);
