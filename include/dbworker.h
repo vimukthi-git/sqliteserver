@@ -21,4 +21,14 @@ extern "C" {
 
 #endif	/* DBWORKER_H */
 
-void* db_worker(void* context);
+#define INSERT_STMT "1"
+#define SELECT_STMT "2"
+
+typedef struct {
+    int partition_id;
+    void* zmq_context;
+} db_worker_params_t;
+
+void* db_single_partition_worker(const db_worker_params_t* params);
+
+void* db_multi_partition_worker(const db_worker_params_t** params);

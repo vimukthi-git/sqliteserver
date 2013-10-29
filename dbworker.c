@@ -7,9 +7,8 @@
 #include <assert.h>
 #include <sqlite3.h> 
 #include <zhelpers.h>
-
-const char* INSERT_STMT = "1";
-const char* SELECT_STMT = "2";
+#include "globals.h"
+#include "dbworker.h"
 
 static int callback(void* NotUsed, int argc, char** argv, char** azColName) {
     int i;
@@ -107,7 +106,13 @@ static char* get_msgpack_str(const char* raw_str, uint32_t size) {
     return str;
 }
 
-void* db_worker(void* context) {
+void* db_single_partition_worker(const db_worker_params_t* params) {
+    //  Socket to talk to multi partition workers
+    char address[22];
+    sprintf(address, SINGLE_PARTITION_WORKER_URL, params->partition_id);
+    void* mworkers = zmq_socket(params->zmq_context, ZMQ_REP);
+    zmq_bind(mworkers, address);
+
     sqlite3* db;
     char* zErrMsg = 0;
     int rc;
@@ -116,8 +121,8 @@ void* db_worker(void* context) {
     db = create_db();
 
     //  Socket to talk to dispatcher
-    void* receiver = zmq_socket(context, ZMQ_REP);
-    zmq_connect(receiver, "inproc://workers");
+    void* receiver = zmq_socket(params->zmq_context, ZMQ_REP);
+    zmq_connect(receiver, SINGLE_PARTITION_WORKERS_URL);
 
     while (1) {
         //  Process the message
@@ -167,5 +172,20 @@ void* db_worker(void* context) {
         zmq_send(receiver, "World", 5, 0);
     }
     zmq_close(receiver);
+    return NULL;
+}
+
+void* db_multi_partition_worker(const db_worker_params_t** params) {
+    void* sworkers[NUM_PARTITIONS];
+    int thread_nbr;
+    //  create sockets to talk to single partition workers
+    for (thread_nbr = 0; thread_nbr < NUM_PARTITIONS; thread_nbr++) {         
+        printf("%d", ((db_worker_params_t*)(*(params + thread_nbr))->partition_id));
+        char address[22];
+        sprintf(address, SINGLE_PARTITION_WORKER_URL, ((db_worker_params_t*)(*(params + thread_nbr))->partition_id));
+        sworkers[thread_nbr] = zmq_socket(((db_worker_params_t*)(*(params + thread_nbr))->zmq_context), ZMQ_REQ);
+        zmq_connect(sworkers[thread_nbr], address);
+        params++;
+    }
     return NULL;
 }
