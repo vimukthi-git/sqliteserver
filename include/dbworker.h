@@ -31,4 +31,4 @@ typedef struct {
 
 void* db_single_partition_worker(const db_worker_params_t* params);
 
-void* db_multi_partition_worker(const db_worker_params_t** params);
+void* db_multi_partition_worker(void* zmq_context);

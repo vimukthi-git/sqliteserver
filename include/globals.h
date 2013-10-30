@@ -24,6 +24,9 @@ extern "C" {
 #define NUM_PARTITIONS 4
 #define NUM_MPARTITION_WORKERS 1
 
+#define SINGLE_PARTITION_STMT 'S'
+#define MULTI_PARTITION_STMT 'M'
+
 #define DB_URL "tcp://*:5555"
 #define SINGLE_PARTITION_WORKERS_URL "inproc://sworkers"
 #define SINGLE_PARTITION_WORKER_URL "inproc://partition%d"
