@@ -111,18 +111,19 @@ void* db_single_partition_worker(const db_worker_params_t* params) {
     char address[22];
     sprintf(address, SINGLE_PARTITION_WORKER_URL, params->partition_id);
     void* mworkers = zmq_socket(params->zmq_context, ZMQ_REP);
-    zmq_bind(mworkers, address);
+    int rc = zmq_bind(mworkers, address);
+    assert (rc == 0);
 
     sqlite3* db;
     char* zErrMsg = 0;
-    int rc;
 
     // connect
     db = create_db();
 
     //  Socket to talk to dispatcher
     void* receiver = zmq_socket(params->zmq_context, ZMQ_REP);
-    zmq_connect(receiver, SINGLE_PARTITION_WORKERS_URL);
+    rc = zmq_connect(receiver, SINGLE_PARTITION_WORKERS_URL);
+    assert (rc == 0);
 
     //  Initialize poll set
     zmq_pollitem_t items [] = {
@@ -130,59 +131,82 @@ void* db_single_partition_worker(const db_worker_params_t* params) {
         { mworkers, 0, ZMQ_POLLIN, 0}
     };
 
-    while (1) { 
+    while (1) {
         //  Process the message
         zmq_msg_t msg;
-        while (1) {
-            zmq_msg_init(&msg);
-            int size = zmq_msg_recv(&msg, receiver, 0);
-            int more = zmq_msg_more(&msg);
+        zmq_poll(items, 2, -1);
+        if (items [0].revents & ZMQ_POLLIN) {
+            while (1) {
+                zmq_msg_init(&msg);
+                int size = zmq_msg_recv(&msg, receiver, 0);
+                int more = zmq_msg_more(&msg);
 
-            if (size != -1) {
-                /* deserializes the message */
-                msgpack_unpacked unpacked_msg;
-                msgpack_unpacked_init(&unpacked_msg);
-                bool success = msgpack_unpack_next(&unpacked_msg, zmq_msg_data(&msg), size, NULL);
+                if (size != -1) {
+                    /* deserializes the message */
+                    msgpack_unpacked unpacked_msg;
+                    msgpack_unpacked_init(&unpacked_msg);
+                    bool success = msgpack_unpack_next(&unpacked_msg, zmq_msg_data(&msg), size, NULL);
 
-                if (success) {
-                    msgpack_object obj = unpacked_msg.data;
+                    if (success) {
+                        msgpack_object obj = unpacked_msg.data;
 
-                    if (obj.type == MSGPACK_OBJECT_RAW) {
-                        //msgpack_object_print(stdout, obj.via.array.ptr->via.); /*=> ["Hello", "MessagePack"] */
-                        if (obj.via.raw.size != 0) {
-                            // initiate sql statement from received data
-                            char* sql = get_msgpack_str(obj.via.raw.ptr, obj.via.raw.size);
-                            /* Execute insert SQL statement */
-                            rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
-                            if (rc != SQLITE_OK) {
-                                fprintf(stderr, "SQL error: %s\n", zErrMsg);
-                                sqlite3_free(zErrMsg);
+                        if (obj.type == MSGPACK_OBJECT_RAW) {
+                            //msgpack_object_print(stdout, obj.via.array.ptr->via.); /*=> ["Hello", "MessagePack"] */
+                            if (obj.via.raw.size != 0) {
+                                // initiate sql statement from received data
+                                char* sql = get_msgpack_str(obj.via.raw.ptr, obj.via.raw.size);
+                                /* Execute insert SQL statement */
+                                rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
+                                if (rc != SQLITE_OK) {
+                                    fprintf(stderr, "SQL error: %s\n", zErrMsg);
+                                    sqlite3_free(zErrMsg);
+                                }
+                                //printf("%s\n", sql);
+                                //printf("The ID of this thread is: %u\n", (unsigned int)pthread_self());                        
+                                free(sql);
                             }
-                            //printf("%s\n", sql);
-                            //printf("The ID of this thread is: %u\n", (unsigned int)pthread_self());                        
-                            free(sql);
                         }
                     }
+                    /* cleaning */
+                    msgpack_unpacked_destroy(&unpacked_msg);
+                    zmq_send(receiver, "World", 5, 0);
                 }
                 /* cleaning */
-                msgpack_unpacked_destroy(&unpacked_msg);
-                zmq_send(receiver, "World", 5, 0);
+                zmq_msg_close(&msg);
+                if (!more)
+                    break; //  Last message part            
             }
-            /* cleaning */
-            zmq_msg_close(&msg);
-            if (!more)
-                break; //  Last message part            
         }
+        if (items [1].revents & ZMQ_POLLIN) {
+            while (1) {
+                zmq_msg_init(&msg);
+                int size = zmq_msg_recv(&msg, mworkers, 0);
+                int more = zmq_msg_more(&msg);                
+                
+                if (size != -1) {
+                    printf("Received Hello - %u\n", (unsigned int) pthread_self());
+                    zmq_send(mworkers, "World", 5, 0);
+                }
+                /* cleaning */
+                zmq_msg_close(&msg);
+                if (!more)
+                    break; //  Last message part            
+            }
+        }
+
+
     }
     zmq_close(receiver);
     return NULL;
 }
 
 void* db_multi_partition_worker(void* zmq_context) {
-    printf("The ID of this thread is: %u\n", (unsigned int)pthread_self());         
+    //printf("The ID of this thread is: %u\n", (unsigned int) pthread_self());
     //  Socket to talk to dispatcher
+    sleep(2);
     void* receiver = zmq_socket(zmq_context, ZMQ_REP);
-    zmq_connect(receiver, MULTI_PARTITION_WORKERS_URL);
+    int rc = zmq_connect(receiver, MULTI_PARTITION_WORKERS_URL);
+    assert (rc == 0);
 
     //  create sockets to talk to single partition workers
     void* sworkers[NUM_PARTITIONS];
@@ -191,22 +215,35 @@ void* db_multi_partition_worker(void* zmq_context) {
         char address[22];
         sprintf(address, SINGLE_PARTITION_WORKER_URL, thread_nbr);
         sworkers[thread_nbr] = zmq_socket(zmq_context, ZMQ_REQ);
-        zmq_connect(sworkers[thread_nbr], address);
+        rc = zmq_connect(sworkers[thread_nbr], address);
+        assert (rc == 0);
     }
-
-    while (1) {
-        //  Process the message
-        zmq_msg_t msg;
-        while (1) {
-            zmq_msg_init(&msg);
-            int size = zmq_msg_recv(&msg, receiver, 0);
-
-            /* cleaning */
-            zmq_msg_close(&msg);
-            zmq_send(receiver, "World", 5, 0);
+    
+    sleep(1);
+    while(1){
+        for (thread_nbr = 0; thread_nbr < NUM_PARTITIONS; thread_nbr++) {
+            char buffer [10];
+            printf("Sending Hello\n");
+            zmq_send(sworkers[thread_nbr], "Hello", 5, 0);
+            zmq_recv(sworkers[thread_nbr], buffer, 10, 0);
+            printf("Received World\n");
+            sleep(1);
         }
-        //sleep(1);
     }
+
+    //    while (1) {
+    //        //  Process the message
+    //        zmq_msg_t msg;
+    //        while (1) {
+    //            zmq_msg_init(&msg);
+    //            int size = zmq_msg_recv(&msg, receiver, 0);
+    //
+    //            /* cleaning */
+    //            zmq_msg_close(&msg);
+    //            zmq_send(receiver, "World", 5, 0);
+    //        }
+    //        //sleep(1);
+    //    }
     // close sockets
     for (thread_nbr = 0; thread_nbr < NUM_PARTITIONS; thread_nbr++) {
         zmq_close(sworkers[thread_nbr]);

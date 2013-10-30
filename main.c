@@ -18,15 +18,18 @@ int main(void) {
     void* context = zmq_ctx_new();
     //  Socket to talk to clients
     void* clients = zmq_socket(context, ZMQ_ROUTER);
-    zmq_bind(clients, DB_URL);
+    int rc = zmq_bind(clients, DB_URL);
+    assert (rc == 0);
 
     //  Socket to talk to single partition workers
     void* sworkers = zmq_socket(context, ZMQ_DEALER);
-    zmq_bind(sworkers, SINGLE_PARTITION_WORKERS_URL);
+    rc = zmq_bind(sworkers, SINGLE_PARTITION_WORKERS_URL);
+    assert (rc == 0);
 
     //  Socket to talk to multi partition workers
     void* mworkers = zmq_socket(context, ZMQ_DEALER);
-    zmq_bind(mworkers, MULTI_PARTITION_WORKERS_URL);
+    rc = zmq_bind(mworkers, MULTI_PARTITION_WORKERS_URL);
+    assert (rc == 0);
 
     //  Launch the pool of single partition worker threads
     pthread_t sworkers_arr[NUM_PARTITIONS];
@@ -43,7 +46,7 @@ int main(void) {
     pthread_t mworkers_arr[NUM_MPARTITION_WORKERS];
     thread_nbr = 0;
     for (thread_nbr = 0; thread_nbr < NUM_MPARTITION_WORKERS; thread_nbr++) {
-        pthread_create(&mworkers_arr[thread_nbr], NULL, (void *) db_multi_partition_worker, params);
+        pthread_create(&mworkers_arr[thread_nbr], NULL, (void *) db_multi_partition_worker, context);
     }
     
     //  Initialize poll set
