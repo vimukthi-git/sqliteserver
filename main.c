@@ -55,7 +55,7 @@ int main(void) {
     //  Switch messages between sockets
     while (1) {
         zmq_msg_t message;
-        zmq_poll (items, 2, -1);
+        zmq_poll (items, 3, -1);
         if (items [0].revents & ZMQ_POLLIN) {
             bool sp = true; // single partition?
             int num_sqlmsg_parts = 0;
@@ -108,6 +108,7 @@ int main(void) {
                         zmq_msg_close (&sqlmsgs[0]);
                         zmq_msg_close (&sqlmsgs[1]);
                         zmq_msg_close (&sqlmsgs[2]);
+                        break; 
                     }    
                 } 
                 //zmq_msg_close (&message);
@@ -139,7 +140,7 @@ int main(void) {
                     break;      //  Last message part
             }
         }
-        sleep(1);
+        //sleep(1);
     }
 
     //  Connect work threads to client threads via a queue proxy

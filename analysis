@@ -1,0 +1,27 @@
+--------------------------------------------------------------------------------
+Profile data file 'callgrind.out.7566' (creator: callgrind-3.7.0)
+--------------------------------------------------------------------------------
+I1 cache: 
+D1 cache: 
+LL cache: 
+Timerange: Basic block 0 - 2204854972
+Trigger: Program termination
+Profiled target:  ./sqliteserver (PID 7566, part 1)
+Events recorded:  Ir
+Events shown:     Ir
+Event sort order: Ir
+Thresholds:       99
+Include dirs:     
+User annotated:   
+Auto-annotation:  off
+
+--------------------------------------------------------------------------------
+           Ir 
+--------------------------------------------------------------------------------
+2,208,848,437  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+           Ir  file:function
+--------------------------------------------------------------------------------
+2,203,768,525  dbworker.c:db_multi_partition_worker [/home/newclearfe1/Development/dbtests/sqliteserver/sqliteserver]
+

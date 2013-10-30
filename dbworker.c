@@ -130,10 +130,9 @@ void* db_single_partition_worker(const db_worker_params_t* params) {
         { mworkers, 0, ZMQ_POLLIN, 0}
     };
 
-    while (1) {
+    while (1) { 
         //  Process the message
         zmq_msg_t msg;
-
         while (1) {
             zmq_msg_init(&msg);
             int size = zmq_msg_recv(&msg, receiver, 0);
@@ -180,6 +179,7 @@ void* db_single_partition_worker(const db_worker_params_t* params) {
 }
 
 void* db_multi_partition_worker(void* zmq_context) {
+    printf("The ID of this thread is: %u\n", (unsigned int)pthread_self());         
     //  Socket to talk to dispatcher
     void* receiver = zmq_socket(zmq_context, ZMQ_REP);
     zmq_connect(receiver, MULTI_PARTITION_WORKERS_URL);
@@ -197,44 +197,15 @@ void* db_multi_partition_worker(void* zmq_context) {
     while (1) {
         //  Process the message
         zmq_msg_t msg;
-        zmq_msg_init(&msg);
-        int size = zmq_msg_recv(&msg, receiver, 0);
+        while (1) {
+            zmq_msg_init(&msg);
+            int size = zmq_msg_recv(&msg, receiver, 0);
 
-        if (size != -1) {
-            /* deserializes the message */
-            msgpack_unpacked unpacked_msg;
-            msgpack_unpacked_init(&unpacked_msg);
-            bool success = msgpack_unpack_next(&unpacked_msg, zmq_msg_data(&msg), size, NULL);
-
-            if (success) {
-                msgpack_object obj = unpacked_msg.data;
-
-                if (obj.type == MSGPACK_OBJECT_RAW) {
-                    //msgpack_object_print(stdout, obj.via.array.ptr->via.); /*=> ["Hello", "MessagePack"] */
-                    if (obj.via.array.size != 0) {
-                        // recover string array elements eg:- ["insert", "insert into t..."]
-                        msgpack_object* p = obj.via.array.ptr;
-                        char* stmt_type = get_msgpack_str(p->via.raw.ptr, p->via.raw.size);
-                        ++p;
-                        // initiate sql statement from received data
-                        char* sql = get_msgpack_str(p->via.raw.ptr, p->via.raw.size);
-                        if (strcmp(stmt_type, INSERT_STMT) == 0) {
-
-                        } else if (strcmp(stmt_type, SELECT_STMT) == 0) {
-                            /* Execute select SQL statement */
-                            printf("%s\n", sql);
-                        }
-                        //printf("The ID of this thread is: %u\n", (unsigned int)pthread_self());                        
-                        free(sql);
-                    }
-                }
-            }
             /* cleaning */
-            msgpack_unpacked_destroy(&unpacked_msg);
+            zmq_msg_close(&msg);
+            zmq_send(receiver, "World", 5, 0);
         }
-        /* cleaning */
-        zmq_msg_close(&msg);
-        zmq_send(receiver, "World", 5, 0);
+        //sleep(1);
     }
     // close sockets
     for (thread_nbr = 0; thread_nbr < NUM_PARTITIONS; thread_nbr++) {
