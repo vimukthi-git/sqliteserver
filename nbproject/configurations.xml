@@ -4,6 +4,7 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>include/dbresult.h</itemPath>
       <itemPath>include/dbworker.h</itemPath>
       <itemPath>include/globals.h</itemPath>
       <itemPath>include/helpers.h</itemPath>
@@ -17,6 +18,7 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>dbresult.c</itemPath>
       <itemPath>dbworker.c</itemPath>
       <itemPath>main.c</itemPath>
       <itemPath>sqlite3.c</itemPath>
@@ -33,6 +35,7 @@
       <itemPath>Makefile</itemPath>
     </logicalFolder>
     <itemPath>README.md</itemPath>
+    <itemPath>TODO.md</itemPath>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -54,7 +57,13 @@
       </compileType>
       <item path="README.md" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="TODO.md" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="dbresult.c" ex="false" tool="0" flavor2="0">
+      </item>
       <item path="dbworker.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="include/dbresult.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/dbworker.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -94,7 +103,13 @@
       </compileType>
       <item path="README.md" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="TODO.md" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="dbresult.c" ex="false" tool="0" flavor2="0">
+      </item>
       <item path="dbworker.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="include/dbresult.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/dbworker.h" ex="false" tool="3" flavor2="0">
       </item>

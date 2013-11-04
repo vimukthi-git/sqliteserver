@@ -12,7 +12,7 @@ endif
 all: sqliteserver
 
 sqliteserver: main.c
-	$(CC) $(CFLAGS) dbworker.c sqlite3.c main.c -Iinclude -I/usr/local/include $(SYSTEM_LIBS) -o sqliteserver
+	$(CC) $(CFLAGS) dbresult.c dbworker.c sqlite3.c main.c -Iinclude -I/usr/local/include $(SYSTEM_LIBS) -o sqliteserver
 
 clean:
 	rm sqliteserver

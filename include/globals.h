@@ -21,8 +21,8 @@ extern "C" {
 
 #endif	/* GLOBALS_H */
 
-#define NUM_PARTITIONS 4
-#define NUM_MPARTITION_WORKERS 1
+#define NUM_PARTITIONS 5
+#define NUM_MPARTITION_WORKERS 5
 
 #define SINGLE_PARTITION_STMT 'S'
 #define MULTI_PARTITION_STMT 'M'

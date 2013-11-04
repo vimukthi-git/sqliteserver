@@ -35,6 +35,7 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/dbresult.o \
 	${OBJECTDIR}/dbworker.o \
 	${OBJECTDIR}/main.o \
 	${OBJECTDIR}/sqlite3.o
@@ -63,6 +64,11 @@ LDLIBSOPTIONS=
 ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/sqliteserver: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.c} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/sqliteserver ${OBJECTFILES} ${LDLIBSOPTIONS}
+
+${OBJECTDIR}/dbresult.o: dbresult.c 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.c) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/dbresult.o dbresult.c
 
 ${OBJECTDIR}/dbworker.o: dbworker.c 
 	${MKDIR} -p ${OBJECTDIR}
