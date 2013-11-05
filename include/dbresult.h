@@ -19,34 +19,46 @@ extern "C" {
 
 #endif	/* RESULT_H */
 
+// declare dependant types first
+
+typedef struct row_t row_t;
+typedef struct resultset_t resultset_t;
+
 // Struct to hold a db result row
 
-typedef struct {
+struct row_t {
     char** values;
-} row_t;
-
-// free the row
-
-void free_row(row_t* row);
+    resultset_t* resultset;
+    int num_added_data;
+};
 
 // Struct to hold a db result set
 
-typedef struct {
+struct resultset_t{
     int num_cols;
+    int num_added_cols;
     row_t** result;    
     char** cols;
     size_t used;
     size_t size;
-} resultset_t;
+};
 
-// init result set
+// add a column to result
 
-void init_resultset(resultset_t *a, size_t initial_size);
+void dbresult_add_rowdata(row_t* row, const char* data);
 
-// add a row to the resultset
+// create result set
 
-void add_result_row(resultset_t *a, row_t* row);
+resultset_t* dbresult_new(size_t initial_size, int num_columns);
+
+// create row
+
+row_t* dbresult_new_row(resultset_t *a);
+
+// add a column to result
+
+void dbresult_add_column(resultset_t *a, const char* column_name);
 
 // free the result set
 
-void free_resultset(resultset_t *a);
+void dbresult_free(resultset_t *a);

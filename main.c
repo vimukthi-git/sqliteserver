@@ -145,10 +145,7 @@ int main(void) {
         }
         //sleep(1);
     }
-
-    //  Connect work threads to client threads via a queue proxy
-    //zmq_proxy(clients, sworkers, NULL);
-
+    
     //  We never get here, but clean up anyhow
     zmq_close(clients);
     zmq_close(sworkers);

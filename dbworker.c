@@ -202,45 +202,37 @@ void* db_single_partition_worker(const db_worker_params_t* params) {
                             if (obj.via.raw.size != 0) {
                                 // A prepered statement for fetching tables
                                 sqlite3_stmt *stmt;
-
                                 // initiate sql statement from received data
                                 char* sql = get_msgpack_str(obj.via.raw.ptr, obj.via.raw.size);
-                                /* Execute select SQL statement */
-                                int retval = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
-                                if (retval) {
-                                    printf("Selecting data from DB Failed\n");
-                                } else {
+                                if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) {
                                     // Read the number of rows fetched
                                     int numcols = sqlite3_column_count(stmt);
-                                    resultset_t* res = malloc(sizeof (resultset_t));
+                                    resultset_t* res = dbresult_new(5, numcols);
                                     // initially 5 rows
-                                    init_resultset(res, 5);
-                                    res->num_cols = numcols;
+                                    //init_resultset(&res, 5, numcols);
+                                    //res->num_cols = numcols;
                                     // malloc the data structs because we share this with other threads
-                                    res->cols = malloc(numcols * sizeof (char*));
+                                    //res->cols = malloc(numcols * sizeof (char*));
                                     int col = 0;
                                     for (col = 0; col < numcols; col++) {
                                         const char* colname = sqlite3_column_name(stmt, col);
-                                        res->cols[col] = malloc(strlen(colname) + 1);
-                                        strcpy(res->cols[col], colname);
+                                        dbresult_add_column(res, colname);
                                     }
 
                                     while (1) {
                                         // fetch a row’s status
-                                        retval = sqlite3_step(stmt);
+                                        int retval = sqlite3_step(stmt);
 
                                         if (retval == SQLITE_ROW) {
-                                            row_t* row = malloc(sizeof (row_t));
-                                            row->values = malloc(numcols * sizeof (char*));
+                                            row_t* row = dbresult_new_row(res);
                                             // SQLITE_ROW means fetched a row 
                                             // add each column value to the resultset
                                             for (col = 0; col < numcols; col++) {
                                                 const unsigned char* val = sqlite3_column_text(stmt, col);
-                                                row->values[col] = malloc(strlen(val) + 1);
-                                                strcpy(row->values[col], val);
+                                                dbresult_add_rowdata(row, val);
                                                 //printf("%s = %s\t", sqlite3_column_name(stmt, col), val);
                                             }
-                                            add_result_row(res, row);
+                                            //add_result_row(res, row);
                                         } else if (retval == SQLITE_DONE) {
                                             // All rows finished
                                             //printf("All rows fetched\n");
@@ -250,10 +242,15 @@ void* db_single_partition_worker(const db_worker_params_t* params) {
                                             //printf("Some error encountered\n");
                                         }
                                     }
-                                    zmq_send(mworkers, res, sizeof (resultset_t), 0);
+                                    sqlite3_finalize(stmt);
+                                    //printf("spt %u sending results\n", (unsigned int)pthread_self());
+                                    zmq_send(mworkers, (void*)(&res), sizeof (resultset_t*), 0);                                    
+                                } else {
+                                    //printf("Selecting data from DB Failed\n");
                                 }
                                 //printf("%s\n", sql);
-                                //printf("The ID of this thread is: %u\n", (unsigned int)pthread_self());                        
+                                //printf("The ID of this thread is: %u\n", (unsigned int)pthread_self());  
+                                zmq_send(mworkers, "Hello", 5, 0);    
                                 free(sql);
                             }
                         }
@@ -273,7 +270,7 @@ void* db_single_partition_worker(const db_worker_params_t* params) {
 }
 
 void* db_multi_partition_worker(void* zmq_context) {
-    printf("The ID of this multi partition thread is: %u\n", (unsigned int) pthread_self());
+    //printf("The ID of this multi partition thread is: %u\n", (unsigned int) pthread_self());
     //  Socket to talk to dispatcher
     sleep(2);
     void* receiver = zmq_socket(zmq_context, ZMQ_REP);
@@ -296,27 +293,37 @@ void* db_multi_partition_worker(void* zmq_context) {
         zmq_msg_t msg;
         while (1) {
             zmq_msg_t replies[NUM_PARTITIONS];
+            zmq_msg_t msg_copies[NUM_PARTITIONS];
             zmq_msg_init(&msg);
             int size = zmq_msg_recv(&msg, receiver, 0);
             //printf("--%d--\n", size);
 
             if (size != -1) {
                 for (thread_nbr = 0; thread_nbr < NUM_PARTITIONS; thread_nbr++) {
+                    zmq_msg_init(&msg_copies[thread_nbr]);
+                    zmq_msg_copy(&msg_copies[thread_nbr], &msg);
                     zmq_msg_init(&replies[thread_nbr]);
                     // TRY ASYNC HERE
-                    zmq_msg_send(&msg, sworkers[thread_nbr], 0);
-                    int size = zmq_msg_recv(&replies[thread_nbr], sworkers[thread_nbr], 0);
-                    resultset_t* result = (resultset_t*) zmq_msg_data(&replies[thread_nbr]);
-                    printf("%s\n", result->result[1]->values[4]);
-                    // free the resultset memory
-                    //free_resultset(result);
+                    zmq_msg_send(&msg_copies[thread_nbr], sworkers[thread_nbr], 0);
+                    size = zmq_msg_recv(&replies[thread_nbr], sworkers[thread_nbr], 0);
+                    if (size != -1) {
+                        resultset_t** result = (resultset_t**) zmq_msg_data(&replies[thread_nbr]);
+                        printf("%s\n", (*result)->result[1]->values[4]);
+                        //printf("%s\n", result->cols[0]);
+                        // free the resultset memory
+                        dbresult_free(*result);
+                    }
                 }
             }
+            
+            // send response result
+            //printf("mpt %u sending results\n", (unsigned int) pthread_self());
+            zmq_send(receiver, "World", 5, 0);
 
             /* cleaning */
             zmq_msg_close(&msg);
-            zmq_send(receiver, "World", 5, 0);
             for (thread_nbr = 0; thread_nbr < NUM_PARTITIONS; thread_nbr++) {
+                zmq_msg_close(&msg_copies[thread_nbr]);
                 zmq_msg_close(&replies[thread_nbr]);
             }
         }
