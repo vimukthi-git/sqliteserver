@@ -1,3 +1,3 @@
 - Select thread data merge
-- Select threads
 - how to implement counts
+- remove db dependant code from dbworker.c by creating an interface

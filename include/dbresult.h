@@ -1,6 +1,6 @@
 /* 
  * File:   result.h
- * Author: newclearfe1
+ * Author: Vimukthi
  *
  * Created on November 4, 2013, 4:06 PM
  */
@@ -34,7 +34,7 @@ struct dbresult_row_t {
 
 // Struct to hold a db result set
 
-struct dbresult_resultset_t{
+struct dbresult_resultset_t {
     int num_cols;
     int num_added_cols;
     dbresult_row_t** result;    

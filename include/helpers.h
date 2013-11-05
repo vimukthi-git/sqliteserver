@@ -1,6 +1,6 @@
 /* 
  * File:   helpers.h
- * Author: newclearfe1
+ * Author: Vimukthi
  *
  * Created on October 29, 2013, 7:35 PM
  */

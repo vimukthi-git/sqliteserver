@@ -1,6 +1,6 @@
 /* 
  * File:   globals.h
- * Author: newclearfe1
+ * Author: Vimukthi
  *
  * Created on October 29, 2013, 8:21 PM
  */

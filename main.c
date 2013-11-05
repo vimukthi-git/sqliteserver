@@ -1,4 +1,4 @@
-//  Sqlite server main
+//  db server main
 // Author : Vimukthi
 
 #include <zmq.h>
