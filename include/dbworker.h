@@ -27,8 +27,8 @@ extern "C" {
 typedef struct {
     int partition_id;
     void* zmq_context;
-} db_worker_params_t;
+} dbworker_params_t;
 
-void* db_single_partition_worker(const db_worker_params_t* params);
+void* dbworker_single_partition(const dbworker_params_t* params);
 
-void* db_multi_partition_worker(void* zmq_context);
+void* dbworker_multi_partition(void* zmq_context);

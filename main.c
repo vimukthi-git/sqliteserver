@@ -33,20 +33,20 @@ int main(void) {
 
     //  Launch the pool of single partition worker threads
     pthread_t sworkers_arr[NUM_PARTITIONS];
-    db_worker_params_t* params[NUM_PARTITIONS];
+    dbworker_params_t* params[NUM_PARTITIONS];
     int thread_nbr;
     for (thread_nbr = 0; thread_nbr < NUM_PARTITIONS; thread_nbr++) {
-        params[thread_nbr] = (db_worker_params_t *) malloc(sizeof (db_worker_params_t));
+        params[thread_nbr] = (dbworker_params_t *) malloc(sizeof (dbworker_params_t));
         params[thread_nbr]->partition_id = thread_nbr;
         params[thread_nbr]->zmq_context = context;
-        pthread_create(&sworkers_arr[thread_nbr], NULL, (void *) db_single_partition_worker, params[thread_nbr]);
+        pthread_create(&sworkers_arr[thread_nbr], NULL, (void *) dbworker_single_partition, params[thread_nbr]);
     }
 
     //  Launch the pool of multi partition worker threads
     pthread_t mworkers_arr[NUM_MPARTITION_WORKERS];
     thread_nbr = 0;
     for (thread_nbr = 0; thread_nbr < NUM_MPARTITION_WORKERS; thread_nbr++) {
-        pthread_create(&mworkers_arr[thread_nbr], NULL, (void *) db_multi_partition_worker, context);
+        pthread_create(&mworkers_arr[thread_nbr], NULL, (void *) dbworker_multi_partition, context);
     }
     
     //  Initialize poll set

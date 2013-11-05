@@ -21,23 +21,23 @@ extern "C" {
 
 // declare dependant types first
 
-typedef struct row_t row_t;
-typedef struct resultset_t resultset_t;
+typedef struct dbresult_row_t dbresult_row_t;
+typedef struct dbresult_resultset_t dbresult_resultset_t;
 
 // Struct to hold a db result row
 
-struct row_t {
+struct dbresult_row_t {
     char** values;
-    resultset_t* resultset;
+    dbresult_resultset_t* resultset;
     int num_added_data;
 };
 
 // Struct to hold a db result set
 
-struct resultset_t{
+struct dbresult_resultset_t{
     int num_cols;
     int num_added_cols;
-    row_t** result;    
+    dbresult_row_t** result;    
     char** cols;
     size_t used;
     size_t size;
@@ -45,20 +45,20 @@ struct resultset_t{
 
 // add a column to result
 
-void dbresult_add_rowdata(row_t* row, const char* data);
+void dbresult_add_rowdata(dbresult_row_t* row, const char* data);
 
 // create result set
 
-resultset_t* dbresult_new(size_t initial_size, int num_columns);
+dbresult_resultset_t* dbresult_new(size_t initial_size, int num_columns);
 
 // create row
 
-row_t* dbresult_new_row(resultset_t *a);
+dbresult_row_t* dbresult_new_row(dbresult_resultset_t *a);
 
 // add a column to result
 
-void dbresult_add_column(resultset_t *a, const char* column_name);
+void dbresult_add_column(dbresult_resultset_t *a, const char* column_name);
 
 // free the result set
 
-void dbresult_free(resultset_t *a);
+void dbresult_free(dbresult_resultset_t *a);

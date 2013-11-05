@@ -111,7 +111,7 @@ static char* get_msgpack_str(const char* raw_str, uint32_t size) {
     return str;
 }
 
-void* db_single_partition_worker(const db_worker_params_t* params) {
+void* dbworker_single_partition(const dbworker_params_t* params) {
     //  Socket to talk to multi partition workers
     char address[22];
     sprintf(address, SINGLE_PARTITION_WORKER_URL, params->partition_id);
@@ -207,7 +207,7 @@ void* db_single_partition_worker(const db_worker_params_t* params) {
                                 if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) {
                                     // Read the number of rows fetched
                                     int numcols = sqlite3_column_count(stmt);
-                                    resultset_t* res = dbresult_new(5, numcols);
+                                    dbresult_resultset_t* res = dbresult_new(5, numcols);
                                     // initially 5 rows
                                     //init_resultset(&res, 5, numcols);
                                     //res->num_cols = numcols;
@@ -224,7 +224,7 @@ void* db_single_partition_worker(const db_worker_params_t* params) {
                                         int retval = sqlite3_step(stmt);
 
                                         if (retval == SQLITE_ROW) {
-                                            row_t* row = dbresult_new_row(res);
+                                            dbresult_row_t* row = dbresult_new_row(res);
                                             // SQLITE_ROW means fetched a row 
                                             // add each column value to the resultset
                                             for (col = 0; col < numcols; col++) {
@@ -244,7 +244,7 @@ void* db_single_partition_worker(const db_worker_params_t* params) {
                                     }
                                     sqlite3_finalize(stmt);
                                     //printf("spt %u sending results\n", (unsigned int)pthread_self());
-                                    zmq_send(mworkers, (void*)(&res), sizeof (resultset_t*), 0);                                    
+                                    zmq_send(mworkers, (void*)(&res), sizeof (dbresult_resultset_t*), 0);                                    
                                 } else {
                                     //printf("Selecting data from DB Failed\n");
                                 }
@@ -269,7 +269,7 @@ void* db_single_partition_worker(const db_worker_params_t* params) {
     return NULL;
 }
 
-void* db_multi_partition_worker(void* zmq_context) {
+void* dbworker_multi_partition(void* zmq_context) {
     //printf("The ID of this multi partition thread is: %u\n", (unsigned int) pthread_self());
     //  Socket to talk to dispatcher
     sleep(2);
@@ -307,7 +307,7 @@ void* db_multi_partition_worker(void* zmq_context) {
                     zmq_msg_send(&msg_copies[thread_nbr], sworkers[thread_nbr], 0);
                     size = zmq_msg_recv(&replies[thread_nbr], sworkers[thread_nbr], 0);
                     if (size != -1) {
-                        resultset_t** result = (resultset_t**) zmq_msg_data(&replies[thread_nbr]);
+                        dbresult_resultset_t** result = (dbresult_resultset_t**) zmq_msg_data(&replies[thread_nbr]);
                         printf("%s\n", (*result)->result[1]->values[4]);
                         //printf("%s\n", result->cols[0]);
                         // free the resultset memory

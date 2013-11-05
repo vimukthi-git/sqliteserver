@@ -8,10 +8,10 @@
 
 // add a row to the resultset
 
-static void dbresult_add_row(resultset_t *a, row_t* row) {
+static void dbresult_add_row(dbresult_resultset_t *a, dbresult_row_t* row) {
     if (a->used == a->size) {
         a->size *= 2;
-        a->result = (row_t**) realloc(a->result, a->size * sizeof (row_t*));
+        a->result = (dbresult_row_t**) realloc(a->result, a->size * sizeof (dbresult_row_t*));
     }
     a->result[a->used++] = row;
     row->resultset = a;
@@ -20,9 +20,9 @@ static void dbresult_add_row(resultset_t *a, row_t* row) {
 
 // init result set
 
-resultset_t* dbresult_new(size_t initial_size, int num_columns) {
-    resultset_t* a = malloc(sizeof (resultset_t));
-    a->result = (row_t**) malloc(initial_size * sizeof (row_t*));
+dbresult_resultset_t* dbresult_new(size_t initial_size, int num_columns) {
+    dbresult_resultset_t* a = malloc(sizeof (dbresult_resultset_t));
+    a->result = (dbresult_row_t**) malloc(initial_size * sizeof (dbresult_row_t*));
     a->num_cols = num_columns;
     a->num_added_cols = 0;
     a->cols = malloc(num_columns * sizeof (char*));
@@ -33,8 +33,8 @@ resultset_t* dbresult_new(size_t initial_size, int num_columns) {
 
 // create new row
 
-row_t* dbresult_new_row(resultset_t *a) {
-    row_t* row = malloc(sizeof (row_t));
+dbresult_row_t* dbresult_new_row(dbresult_resultset_t *a) {
+    dbresult_row_t* row = malloc(sizeof (dbresult_row_t));
     row->values = malloc(a->num_cols * sizeof (char*));
     dbresult_add_row(a, row);
     return row;
@@ -42,7 +42,7 @@ row_t* dbresult_new_row(resultset_t *a) {
 
 // add column
 
-void dbresult_add_column(resultset_t *a, const char* column_name) {
+void dbresult_add_column(dbresult_resultset_t *a, const char* column_name) {
     if (a->num_added_cols < a->num_cols) {
         a->cols[a->num_added_cols] = malloc(strlen(column_name) + 1);
         strcpy(a->cols[a->num_added_cols], column_name);
@@ -52,7 +52,7 @@ void dbresult_add_column(resultset_t *a, const char* column_name) {
 
 // add data to a row
 
-void dbresult_add_rowdata(row_t* row, const char* data) {
+void dbresult_add_rowdata(dbresult_row_t* row, const char* data) {
     // check whether the column number limit has exceeded and add data
     if (row->num_added_data < row->resultset->num_cols) {
         row->values[row->num_added_data] = malloc(strlen(data) + 1);
@@ -63,7 +63,7 @@ void dbresult_add_rowdata(row_t* row, const char* data) {
 
 // free the result set
 
-void dbresult_free(resultset_t *a) {
+void dbresult_free(dbresult_resultset_t *a) {
     int i, j;
     for (i = 0; i < a->used; i++) {
         if (a->result[i]->num_added_data > 0) {
@@ -78,12 +78,12 @@ void dbresult_free(resultset_t *a) {
         }
         // free row_t
         a->result[i]->resultset = NULL;
-        free((row_t*)(a->result[i]));
+        free((dbresult_row_t*)(a->result[i]));
         a->result[i] = NULL;
     }
     
     // free the result array
-    free((row_t**)(a->result));
+    free((dbresult_row_t**)(a->result));
     a->result = NULL;
     
     // free the column names
@@ -97,6 +97,6 @@ void dbresult_free(resultset_t *a) {
     a->cols = NULL;
     
     // free the resultset_t
-    free((resultset_t*)a);
+    free((dbresult_resultset_t*)a);
     a = NULL;
 }
