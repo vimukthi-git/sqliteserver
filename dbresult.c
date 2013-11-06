@@ -4,7 +4,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
+#include <msgpack.h>
 #include "dbresult.h"
+#include "globals.h"
 
 // add a row to the resultset
 
@@ -54,11 +56,44 @@ void dbresult_add_column(dbresult_resultset_t *a, const char* column_name) {
 
 void dbresult_add_rowdata(dbresult_row_t* row, const char* data) {
     // check whether the column number limit has exceeded and add data
-    if (row->num_added_data < row->resultset->num_cols) {
+    if (row->num_added_data < row->resultset->num_added_cols) {
         row->values[row->num_added_data] = malloc(strlen(data) + 1);
         strcpy(row->values[row->num_added_data], data);
         row->num_added_data++;
     }
+}
+
+// merge and serialize an array of result sets
+
+void* dbresult_merge_serialize(dbresult_resultset_t** a, dbresult_mergeparams_t* params) {
+    /* create buffer and serializer instance. */
+    msgpack_sbuffer* buffer = msgpack_sbuffer_new();
+    msgpack_packer* pk = msgpack_packer_new(buffer, msgpack_sbuffer_write);
+    int total_results = 0;
+    int num_cols = a[0]->num_added_cols;
+    int i, j, k;
+    for (i = 0; i < NUM_PARTITIONS; i++) {
+        total_results += a[i]->used;
+    }
+    /* serializes result */
+    msgpack_pack_array(pk, total_results);
+    // each resultset of data
+    for (k = 0; k < NUM_PARTITIONS; k++) {
+        // each result row of data
+        for (i = 0; i < a[k]->used; i++) {
+            assert(num_cols == a[k]->num_added_cols);
+            msgpack_pack_map(pk, a[k]->num_added_cols);
+            // each column of data
+            for (j = 0; j < a[k]->num_added_cols; j++) {
+                msgpack_pack_raw(pk, strlen(a[k]->cols[j]));
+                msgpack_pack_raw_body(pk, a[k]->cols[j], strlen(a[k]->cols[j]));
+                msgpack_pack_raw(pk, strlen(a[k]->result[i]->values[j]));
+                msgpack_pack_raw_body(pk, a[k]->result[i]->values[j], strlen(a[k]->result[i]->values[j]));
+            }
+        }
+    }
+    msgpack_packer_free(pk);
+    return buffer;
 }
 
 // free the result set
@@ -69,34 +104,34 @@ void dbresult_free(dbresult_resultset_t *a) {
         if (a->result[i]->num_added_data > 0) {
             // free each column of data
             for (j = 0; j < a->result[i]->num_added_data; j++) {
-                free((char*)(a->result[i]->values[j]));
+                free((char*) (a->result[i]->values[j]));
                 a->result[i]->values[j] = NULL;
             }
             // free values array
-            free((char**)(a->result[i]->values));
+            free((char**) (a->result[i]->values));
             a->result[i]->values = NULL;
         }
         // free row_t
         a->result[i]->resultset = NULL;
-        free((dbresult_row_t*)(a->result[i]));
+        free((dbresult_row_t*) (a->result[i]));
         a->result[i] = NULL;
     }
-    
+
     // free the result array
-    free((dbresult_row_t**)(a->result));
+    free((dbresult_row_t**) (a->result));
     a->result = NULL;
-    
+
     // free the column names
     for (i = 0; i < a->num_added_cols; i++) {
-        free((char*)(a->cols[i]));
+        free((char*) (a->cols[i]));
         a->cols[i] = NULL;
     }
-    
+
     // free the column name array
-    free((char**)(a->cols));
+    free((char**) (a->cols));
     a->cols = NULL;
-    
+
     // free the resultset_t
-    free((dbresult_resultset_t*)a);
+    free((dbresult_resultset_t*) a);
     a = NULL;
 }

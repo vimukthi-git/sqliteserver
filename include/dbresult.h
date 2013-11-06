@@ -23,6 +23,7 @@ extern "C" {
 
 typedef struct dbresult_row_t dbresult_row_t;
 typedef struct dbresult_resultset_t dbresult_resultset_t;
+typedef struct dbresult_mergeparams_t dbresult_mergeparams_t;
 
 // Struct to hold a db result row
 
@@ -43,6 +44,13 @@ struct dbresult_resultset_t {
     size_t size;
 };
 
+// Struct to hold merge params for a resultset
+
+struct dbresult_mergeparams_t {
+    int num_sort_columns;
+    char** sort_columns;
+};
+
 // add a column to result
 
 void dbresult_add_rowdata(dbresult_row_t* row, const char* data);
@@ -58,6 +66,10 @@ dbresult_row_t* dbresult_new_row(dbresult_resultset_t *a);
 // add a column to result
 
 void dbresult_add_column(dbresult_resultset_t *a, const char* column_name);
+
+// merge and serialize an array of result sets
+
+void* dbresult_merge_serialize(dbresult_resultset_t** a, dbresult_mergeparams_t* params);
 
 // free the result set
 

@@ -244,13 +244,13 @@ void* dbworker_single_partition(const dbworker_params_t* params) {
                                     }
                                     sqlite3_finalize(stmt);
                                     //printf("spt %u sending results\n", (unsigned int)pthread_self());
-                                    zmq_send(mworkers, (void*)(&res), sizeof (dbresult_resultset_t*), 0);                                    
+                                    zmq_send(mworkers, (void*) (&res), sizeof (dbresult_resultset_t*), 0);
                                 } else {
                                     //printf("Selecting data from DB Failed\n");
                                 }
                                 //printf("%s\n", sql);
                                 //printf("The ID of this thread is: %u\n", (unsigned int)pthread_self());  
-                                zmq_send(mworkers, "Hello", 5, 0);    
+                                zmq_send(mworkers, "Hello", 5, 0);
                                 free(sql);
                             }
                         }
@@ -292,6 +292,7 @@ void* dbworker_multi_partition(void* zmq_context) {
         //  Process the message
         zmq_msg_t msg;
         while (1) {
+            dbresult_resultset_t * data[NUM_PARTITIONS];
             zmq_msg_t replies[NUM_PARTITIONS];
             zmq_msg_t msg_copies[NUM_PARTITIONS];
             zmq_msg_init(&msg);
@@ -308,21 +309,27 @@ void* dbworker_multi_partition(void* zmq_context) {
                     size = zmq_msg_recv(&replies[thread_nbr], sworkers[thread_nbr], 0);
                     if (size != -1) {
                         dbresult_resultset_t** result = (dbresult_resultset_t**) zmq_msg_data(&replies[thread_nbr]);
-                        printf("%s\n", (*result)->result[1]->values[4]);
+                        data[thread_nbr] = *result;
+                        //printf("%s\n", (*result)->result[1]->values[4]);
                         //printf("%s\n", result->cols[0]);
                         // free the resultset memory
-                        dbresult_free(*result);
+
                     }
                 }
             }
-            
+            dbresult_mergeparams_t merge_params;
+
             // send response result
             //printf("mpt %u sending results\n", (unsigned int) pthread_self());
-            zmq_send(receiver, "World", 5, 0);
+            msgpack_sbuffer* buffer = (msgpack_sbuffer*) dbresult_merge_serialize(data, &merge_params);    
+            //printf("%d\n", (unsigned int)(buffer->size));
+            zmq_send(receiver, buffer->data, buffer->size, 0);
 
             /* cleaning */
+            msgpack_sbuffer_free(buffer);
             zmq_msg_close(&msg);
             for (thread_nbr = 0; thread_nbr < NUM_PARTITIONS; thread_nbr++) {
+                dbresult_free(data[thread_nbr]);
                 zmq_msg_close(&msg_copies[thread_nbr]);
                 zmq_msg_close(&replies[thread_nbr]);
             }
