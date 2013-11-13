@@ -66,34 +66,34 @@ void dbresult_add_rowdata(dbresult_row_t* row, const char* data) {
 // merge and serialize an array of result sets
 
 void* dbresult_merge_serialize(dbresult_resultset_t** a, dbresult_mergeparams_t* params) {
-    /* create buffer and serializer instance. */
-    msgpack_sbuffer* buffer = msgpack_sbuffer_new();
-    msgpack_packer* pk = msgpack_packer_new(buffer, msgpack_sbuffer_write);
-    int total_results = 0;
-    int num_cols = a[0]->num_added_cols;
-    int i, j, k;
-    for (i = 0; i < NUM_PARTITIONS; i++) {
-        total_results += a[i]->used;
-    }
-    /* serializes result */
-    msgpack_pack_array(pk, total_results);
-    // each resultset of data
-    for (k = 0; k < NUM_PARTITIONS; k++) {
-        // each result row of data
-        for (i = 0; i < a[k]->used; i++) {
-            assert(num_cols == a[k]->num_added_cols);
-            msgpack_pack_map(pk, a[k]->num_added_cols);
-            // each column of data
-            for (j = 0; j < a[k]->num_added_cols; j++) {
-                msgpack_pack_raw(pk, strlen(a[k]->cols[j]));
-                msgpack_pack_raw_body(pk, a[k]->cols[j], strlen(a[k]->cols[j]));
-                msgpack_pack_raw(pk, strlen(a[k]->result[i]->values[j]));
-                msgpack_pack_raw_body(pk, a[k]->result[i]->values[j], strlen(a[k]->result[i]->values[j]));
-            }
-        }
-    }
-    msgpack_packer_free(pk);
-    return buffer;
+//    /* create buffer and serializer instance. */
+//    msgpack_sbuffer* buffer = msgpack_sbuffer_new();
+//    msgpack_packer* pk = msgpack_packer_new(buffer, msgpack_sbuffer_write);
+//    int total_results = 0;
+//    int num_cols = a[0]->num_added_cols;
+//    int i, j, k;
+//    for (i = 0; i < NUM_PARTITIONS; i++) {
+//        total_results += a[i]->used;
+//    }
+//    /* serializes result */
+//    msgpack_pack_array(pk, total_results);
+//    // each resultset of data
+//    for (k = 0; k < NUM_PARTITIONS; k++) {
+//        // each result row of data
+//        for (i = 0; i < a[k]->used; i++) {
+//            assert(num_cols == a[k]->num_added_cols);
+//            msgpack_pack_map(pk, a[k]->num_added_cols);
+//            // each column of data
+//            for (j = 0; j < a[k]->num_added_cols; j++) {
+//                msgpack_pack_raw(pk, strlen(a[k]->cols[j]));
+//                msgpack_pack_raw_body(pk, a[k]->cols[j], strlen(a[k]->cols[j]));
+//                msgpack_pack_raw(pk, strlen(a[k]->result[i]->values[j]));
+//                msgpack_pack_raw_body(pk, a[k]->result[i]->values[j], strlen(a[k]->result[i]->values[j]));
+//            }
+//        }
+//    }
+//    msgpack_packer_free(pk);
+    return NULL;
 }
 
 // free the result set
