@@ -26,8 +26,6 @@
 
 static sqlite3* create_db() {
     sqlite3* db;
-    char* zErrMsg = 0;
-    char* sql;
     int rc;
     /* Open database */
     rc = sqlite3_open(":memory:", &db);
@@ -37,66 +35,7 @@ static sqlite3* create_db() {
     } else {
         fprintf(stdout, "Opened database successfully\n");
     }
-
-    // Create SQL statement 
-    sql = "CREATE TABLE COMPANY ("  \
-         "ID INT NOT NULL," \
-         "NAME           TEXT    NOT NULL," \
-         "AGE            INT     NOT NULL," \
-         "ADDRESS1        CHAR(50)," \
-         "ADDRESS2        CHAR(50)," \
-         "ADDRESS3        CHAR(50)," \
-         "ADDRESS4        CHAR(50)," \
-         "ADDRESS5        CHAR(50)," \
-         "ADDRESS6        CHAR(50)," \
-         "ADDRESS7        CHAR(50)," \
-         "ADDRESS8        CHAR(50)," \
-         "ADDRESS9        CHAR(50)," \
-         "ADDRESS10        CHAR(50)," \
-         "ADDRESS11        CHAR(50)," \
-         "ADDRESS12        CHAR(50)," \
-         "ADDRESS13        CHAR(50)," \
-         "ADDRESS14        CHAR(50)," \
-         "ADDRESS15        CHAR(50)," \
-         "ADDRESS16        CHAR(50)," \
-         "ADDRESS17        CHAR(50)," \
-         "ADDRESS18        CHAR(50)," \
-         "ADDRESS19        CHAR(50)," \
-         "ADDRESS20        CHAR(50)," \
-         "SALARY         REAL );";
-
-    /* Execute SQL statement */
-    rc = sqlite3_exec(db, sql, NULL, 0, &zErrMsg);
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-    } else {
-        fprintf(stdout, "Table created successfully\n");
-    }
-
-    // Indexes SQL statement 
-    sql = "CREATE INDEX index_age ON COMPANY(AGE);";
-
-    /* Execute SQL statement */
-    rc = sqlite3_exec(db, sql, NULL, 0, &zErrMsg);
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-    } else {
-        fprintf(stdout, "Index created successfully\n");
-    }
-
-    // Indexes SQL statement 
-    sql = "CREATE INDEX index_address20 ON COMPANY(ADDRESS20);";
-
-    /* Execute SQL statement */
-    rc = sqlite3_exec(db, sql, NULL, 0, &zErrMsg);
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-    } else {
-        fprintf(stdout, "Index created successfully\n");
-    }
+    sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
     return db;
 }
 

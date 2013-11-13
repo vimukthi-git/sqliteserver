@@ -21,8 +21,8 @@ extern "C" {
 
 #endif	/* GLOBALS_H */
 
-#define NUM_PARTITIONS 5
-#define NUM_MPARTITION_WORKERS 5
+#define NUM_PARTITIONS 1
+#define NUM_MPARTITION_WORKERS 3
 
 #define SINGLE_PARTITION_STMT 'S'
 #define MULTI_PARTITION_STMT 'M'
@@ -31,4 +31,3 @@ extern "C" {
 #define SINGLE_PARTITION_WORKERS_URL "inproc://sworkers"
 #define SINGLE_PARTITION_WORKER_URL "inproc://partition%d"
 #define MULTI_PARTITION_WORKERS_URL "inproc://mworkers"
-

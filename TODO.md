@@ -1,3 +1,4 @@
-- Select thread data merge
 - how to implement counts
-- remove db dependant code from dbworker.c by creating an interface
+- Handle sqlite ok
+- DB backup
+- How to reload from snapshot

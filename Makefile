@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g3 -O3
+CFLAGS=-O3
 
 PLATFORM = $(shell uname)
 ifeq ($(PLATFORM),Darwin)
